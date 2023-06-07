@@ -48,7 +48,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-    const usersCollection = client.db("jarinParlar").collection("users");
+    const usersCollection = client.db("shutter-safari").collection("users");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -78,12 +78,14 @@ async function run() {
     });
 
     app.post("/users", async (req, res) => {
-      const user = req.body;
-      const query = { email: user.email };
+      const { name, email, photoUrl } = req.body;
+      // console.log(name, email, photoUrl);
+      const query = { email };
       const existingUser = await usersCollection.findOne(query);
       if (existingUser) {
         return res.send({ message: "user already exists" });
       }
+      const user = { name, email, photoUrl };
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
@@ -117,9 +119,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Jerin's Parlar is sitting");
+  res.send("Shutter Safari is sitting");
 });
 
 app.listen(port, () => {
-  console.log(`Jarin's Parlar is sitting on port ${port}`);
+  console.log(`Shutter Safari is sitting on port ${port}`);
 });
