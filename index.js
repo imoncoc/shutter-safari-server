@@ -49,6 +49,7 @@ async function run() {
     // await client.connect();
 
     const usersCollection = client.db("shutter-safari").collection("users");
+    const classesCollection = client.db("shutter-safari").collection("classes");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -105,6 +106,21 @@ async function run() {
       const result = { admin: user?.role === "admin" };
       res.send(result);
     });
+
+
+
+
+
+    // Classes API 
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
