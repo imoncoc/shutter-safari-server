@@ -136,6 +136,23 @@ async function run() {
       res.send(result);
     });
 
+    // Security layer: verifyJWT
+    // email same
+    // check instructor
+    app.get("/users/user/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      console.log(req.decoded.email);
+
+      if (req.decoded.email !== email) {
+        res.send({ user: false });
+      }
+
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { user: user?.role === "user" };
+      res.send(result);
+    });
+
 
     // Classes API
     app.get("/classes", async (req, res) => {
