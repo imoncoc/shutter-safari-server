@@ -119,20 +119,29 @@ async function run() {
       res.send(result);
     });
 
+    // Security layer: verifyJWT
+    // email same
+    // check instructor
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      console.log(req.decoded.email);
 
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
+      }
 
-
-
-    // Classes API 
-    app.get("/classes", async (req, res) => {
-      const result = await classesCollection.find().toArray();
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { instructor: user?.role === "instructor" };
       res.send(result);
     });
 
 
-
-
-
+    // Classes API
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
