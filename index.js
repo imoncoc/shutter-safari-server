@@ -50,6 +50,7 @@ async function run() {
 
     const usersCollection = client.db("shutter-safari").collection("users");
     const classesCollection = client.db("shutter-safari").collection("classes");
+    const cartCollection = client.db("shutter-safari").collection("carts");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -91,14 +92,14 @@ async function run() {
     });
 
     app.post("/users", async (req, res) => {
-      const { name, email, photoUrl } = req.body;
+      const { name, email, photoUrl, role } = req.body;
       // console.log(name, email, photoUrl);
       const query = { email };
       const existingUser = await usersCollection.findOne(query);
       if (existingUser) {
         return res.send({ message: "user already exists" });
       }
-      const user = { name, email, photoUrl };
+      const user = { name, email, photoUrl, role };
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
@@ -159,6 +160,51 @@ async function run() {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
+
+
+
+
+    // Carts Api
+    app.get("/carts", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      if (!email) {
+        res.send([]);
+      }
+
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+
+      const query = { email: email };
+      const result = await cartCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.post("/carts", async (req, res) => {
+      const item = req.body;
+      console.log(item);
+      const result = await cartCollection.insertOne(item);
+      res.send(result);
+    });
+
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartCollection.deleteOne(query);
+      res.send(result);
+    });
+
+
+
+
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
