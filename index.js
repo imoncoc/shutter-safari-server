@@ -161,6 +161,15 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/popular", async (req, res) => {
+      const result = await classesCollection
+        .find({}, { ratings: 1 })
+        .sort({ ratings: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
+    });
+
 
 
 
