@@ -156,10 +156,35 @@ async function run() {
 
 
     // Classes API
+    // app.get("/classes", async (req, res) => {
+    //   const result = await classesCollection.find().toArray();
+    //   res.send(result);
+    // });
+
     app.get("/classes", async (req, res) => {
-      const result = await classesCollection.find().toArray();
-      res.send(result);
+      const classes = await classesCollection.find().toArray();
+      const emailCounts = {};
+
+      for (const classItem of classes) {
+        const { insEmail } = classItem;
+
+        if (emailCounts[insEmail]) {
+          emailCounts[insEmail]++;
+        } else {
+          emailCounts[insEmail] = 1;
+        }
+      }
+
+      for (const classItem of classes) {
+        const { insEmail } = classItem;
+
+        // Add the email count property to the class item
+        classItem.sameEmailCount = emailCounts[insEmail];
+      }
+
+      res.send(classes);
     });
+
 
     app.get("/popular", async (req, res) => {
       const result = await classesCollection
