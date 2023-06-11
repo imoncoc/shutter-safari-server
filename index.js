@@ -159,43 +159,36 @@ async function run() {
     });
 
     // Classes API
-    // app.get("/classes", async (req, res) => {
-    //   const result = await classesCollection.find().toArray();
-    //   res.send(result);
-    // });
+   app.get("/classes", async (req, res) => {
+     const classes = await classesCollection
+       .find({ status: "approved" })
+       .toArray();
+     const emailCounts = {};
 
-    app.get("/classes", async (req, res) => {
-      const classes = await classesCollection.find().toArray();
-      const emailCounts = {};
+     for (const classItem of classes) {
+       const { insEmail } = classItem;
 
-      for (const classItem of classes) {
-        const { insEmail } = classItem;
+       if (emailCounts[insEmail]) {
+         emailCounts[insEmail]++;
+       } else {
+         emailCounts[insEmail] = 1;
+       }
+     }
+     for (const classItem of classes) {
+       const { insEmail } = classItem;
+       // Add the email count property to the class item
+       classItem.sameEmailCount = emailCounts[insEmail];
+     }
+     res.send(classes);
+   });
 
-        if (emailCounts[insEmail]) {
-          emailCounts[insEmail]++;
-        } else {
-          emailCounts[insEmail] = 1;
-        }
-      }
+   app.post("/classes", async (req, res) => {
+     const newClasses = req.body;
+     console.log(newClasses);
+     const result = await classesCollection.insertOne(newClasses);
+     res.send(result);
+   });
 
-      for (const classItem of classes) {
-        const { insEmail } = classItem;
-
-        // Add the email count property to the class item
-        classItem.sameEmailCount = emailCounts[insEmail];
-      }
-
-      res.send(classes);
-    });
-
-    // app.get("/popular", async (req, res) => {
-    //   const result = await classesCollection
-    //     .find({}, { ratings: 1 })
-    //     .sort({ ratings: -1 })
-    //     .limit(6)
-    //     .toArray();
-    //   res.send(result);
-    // });
 
     app.get("/popular", async (req, res) => {
       const classes = await classesCollection
@@ -227,6 +220,13 @@ async function run() {
       }
 
       res.send(classes);
+    });
+
+    // Data by Instructor
+    app.get("/my-classes/:email", async (req, res) => {
+      const email = req.params.email;
+      const data = await classesCollection.find({ insEmail: email }).toArray();
+      res.send(data);
     });
 
     // Carts Api
@@ -295,30 +295,37 @@ async function run() {
     });
 
     // payment related api
-    /* Course Api
     app.post("/payments", verifyJWT, async (req, res) => {
       const payment = req.body;
       const insertResult = await paymentCollection.insertOne(payment);
 
-      const query = {
-        _id: { $in: payment.cartItems.map((id) => new ObjectId(id)) },
-      };
-      const deleteResult = await cartCollection.deleteMany(query);
-      res.send({ insertResult, deleteResult });
-    });
-    */
-
-    app.post("/payments", verifyJWT, async (req, res) => {
-      const payment = req.body;
-      const insertResult = await paymentCollection.insertOne(payment);
-
-      const paymentId = payment.cartItemId; // Replace with the actual paymentId
+      const paymentId = payment.cartItems; // Replace with the actual paymentId
       const query = { _id: new ObjectId(paymentId) };
-
       const deleteResult = await cartCollection.deleteOne(query);
-
       res.send({ insertResult, deleteResult });
+      // res.send(insertResult);
     });
+
+    // app.get("/payments", verifyJWT, async (req, res) => {
+    //   const result = await paymentCollection.find().toArray();
+    //   res.send(result);
+    // });
+    app.get("/payments", verifyJWT, async (req, res) => {
+      const result = await paymentCollection
+        .aggregate([
+          { $sort: { date: -1 } }, // Sort by date in ascending order
+        ])
+        .toArray();
+
+      res.send(result);
+    });
+
+
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
