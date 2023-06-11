@@ -4,6 +4,7 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
 const port = process.env.PORT || 5000;
 
@@ -51,6 +52,9 @@ async function run() {
     const usersCollection = client.db("shutter-safari").collection("users");
     const classesCollection = client.db("shutter-safari").collection("classes");
     const cartCollection = client.db("shutter-safari").collection("carts");
+    const paymentCollection = client
+      .db("shutter-safari")
+      .collection("payments");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -154,7 +158,6 @@ async function run() {
       res.send(result);
     });
 
-
     // Classes API
     // app.get("/classes", async (req, res) => {
     //   const result = await classesCollection.find().toArray();
@@ -184,7 +187,6 @@ async function run() {
 
       res.send(classes);
     });
-
 
     // app.get("/popular", async (req, res) => {
     //   const result = await classesCollection
@@ -227,9 +229,6 @@ async function run() {
       res.send(classes);
     });
 
-
-
-
     // Carts Api
     app.get("/carts", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -248,11 +247,6 @@ async function run() {
       const result = await cartCollection.find(query).toArray();
       res.send(result);
     });
-
-
-    
-
-
 
     // app.post("/carts", async (req, res) => {
     //   const item = req.body;
@@ -286,14 +280,45 @@ async function run() {
       res.send(result);
     });
 
+    // Create Payment intent
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
+    // payment related api
+    /* Course Api
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
 
+      const query = {
+        _id: { $in: payment.cartItems.map((id) => new ObjectId(id)) },
+      };
+      const deleteResult = await cartCollection.deleteMany(query);
+      res.send({ insertResult, deleteResult });
+    });
+    */
 
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const insertResult = await paymentCollection.insertOne(payment);
 
+      const paymentId = payment.cartItemId; // Replace with the actual paymentId
+      const query = { _id: new ObjectId(paymentId) };
 
+      const deleteResult = await cartCollection.deleteOne(query);
 
-
-
+      res.send({ insertResult, deleteResult });
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
