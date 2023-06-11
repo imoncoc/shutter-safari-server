@@ -186,13 +186,45 @@ async function run() {
     });
 
 
+    // app.get("/popular", async (req, res) => {
+    //   const result = await classesCollection
+    //     .find({}, { ratings: 1 })
+    //     .sort({ ratings: -1 })
+    //     .limit(6)
+    //     .toArray();
+    //   res.send(result);
+    // });
+
     app.get("/popular", async (req, res) => {
-      const result = await classesCollection
-        .find({}, { ratings: 1 })
+      const classes = await classesCollection
+        .find({}, { ratings: 1, insEmail: 1 })
         .sort({ ratings: -1 })
         .limit(6)
         .toArray();
-      res.send(result);
+
+      const emailCounts = {};
+
+      // Retrieve all classes to count email occurrences
+      const allClasses = await classesCollection.find().toArray();
+
+      for (const classItem of allClasses) {
+        const { insEmail } = classItem;
+
+        if (emailCounts[insEmail]) {
+          emailCounts[insEmail]++;
+        } else {
+          emailCounts[insEmail] = 1;
+        }
+      }
+
+      for (const classItem of classes) {
+        const { insEmail } = classItem;
+
+        // Add the email count property to the class item
+        classItem.sameEmailCount = emailCounts[insEmail];
+      }
+
+      res.send(classes);
     });
 
 
@@ -217,9 +249,32 @@ async function run() {
       res.send(result);
     });
 
+
+    
+
+
+
+    // app.post("/carts", async (req, res) => {
+    //   const item = req.body;
+    //   console.log(item);
+    //   const result = await cartCollection.insertOne(item);
+    //   res.send(result);
+    // });
+
     app.post("/carts", async (req, res) => {
       const item = req.body;
-      console.log(item);
+      const classId = item.classId;
+
+      // Check if classId already exists
+      const existingItem = await cartCollection.findOne({ classId: classId });
+
+      if (existingItem) {
+        // classId already exists, do not post
+        res.status(400).send("classId already exists");
+        return;
+      }
+
+      // classId does not exist, proceed with posting
       const result = await cartCollection.insertOne(item);
       res.send(result);
     });
