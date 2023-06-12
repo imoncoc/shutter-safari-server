@@ -39,13 +39,9 @@ The backend of Shutter Safari photography website is responsible for handling da
 
 ## Deployment:
 
-The backend of Shutter Safari can be deployed on various platforms, including but not limited to:
+The backend of Shutter Safari can be deployed on various platforms:
 
-- Heroku
-- AWS Elastic Beanstalk
-- DigitalOcean
-- Microsoft Azure
-- Google Cloud Platform
+- Vercel
 
 Please refer to the documentation of your chosen deployment platform for detailed instructions on how to deploy a Node.js application.
 
