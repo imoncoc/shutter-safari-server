@@ -158,6 +158,31 @@ async function run() {
       res.send(result);
     });
 
+    app.put("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const options = {upsert: true};
+      const updatedUser = req.body; 
+      const user = {
+        $set: {
+          name: updatedUser.name,
+          email: updatedUser.email,
+          photoUrl: updatedUser.photoUrl,
+          role: updatedUser.role,
+        },
+      };
+
+      const result = await usersCollection.updateOne(filter, user, options)
+      res.send(result);
+    })
+
+    app.delete("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // Classes API
    app.get("/classes", async (req, res) => {
      const classes = await classesCollection
@@ -279,6 +304,51 @@ async function run() {
       const result = await cartCollection.deleteOne(query);
       res.send(result);
     });
+
+
+
+    // ManageUsers Api
+    app.get("/all-users", verifyJWT, async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.put("/update-user-role/:id", verifyJWT, async (req, res) => {
+      const userId = req.params.id;
+      const newRoleId = req.body.roleId; // Assuming you provide the new role ID in the request body
+
+      usersCollection
+        .findOneAndUpdate(
+          { _id: userId },
+          { $set: { role: newRoleId } },
+          { returnOriginal: false }
+        )
+        .then((updatedUser) => {
+          if (updatedUser) {
+            res.send(updatedUser);
+          } else {
+            res.status(404).send("User not found");
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          res.status(500).send("An error occurred while updating user role");
+        });
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Create Payment intent
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
