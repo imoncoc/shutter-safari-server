@@ -129,7 +129,7 @@ async function run() {
     // check instructor
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      console.log(req.decoded.email);
+      // console.log(req.decoded.email);
 
       if (req.decoded.email !== email) {
         res.send({ instructor: false });
@@ -184,6 +184,11 @@ async function run() {
     });
 
     // Classes API
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+    /*
    app.get("/classes", async (req, res) => {
      const classes = await classesCollection
        .find({ status: "approved" })
@@ -206,11 +211,32 @@ async function run() {
      }
      res.send(classes);
    });
+   */
 
    app.post("/classes", async (req, res) => {
      const newClasses = req.body;
-     console.log(newClasses);
+    //  console.log(newClasses);
      const result = await classesCollection.insertOne(newClasses);
+     res.send(result);
+   });
+
+   app.put("/class/:id", async (req, res) => {
+     const id = req.params.id;
+     const filter = { _id: new ObjectId(id) };
+     const options = { upsert: true };
+     const updatedClass = req.body;
+     const InstructorClass = {
+       $set: {
+         status: updatedClass.status,
+         feedback: updatedClass.feedback
+       },
+     };
+
+     const result = await classesCollection.updateOne(
+       filter,
+       InstructorClass,
+       options
+     );
      res.send(result);
    });
 
@@ -236,14 +262,11 @@ async function run() {
           emailCounts[insEmail] = 1;
         }
       }
-
       for (const classItem of classes) {
         const { insEmail } = classItem;
-
         // Add the email count property to the class item
         classItem.sameEmailCount = emailCounts[insEmail];
       }
-
       res.send(classes);
     });
 
