@@ -240,6 +240,26 @@ async function run() {
      res.send(result);
    });
 
+   app.put("/class-after-payment/:id", async (req, res) => {
+     const id = req.params.id;
+     const filter = { _id: new ObjectId(id) };
+     const options = { upsert: true };
+     const updatedClass = req.body;
+     const InstructorClass = {
+       $set: {
+         purchaseCourse: updatedClass.purchaseCourse,
+         availableSeats: updatedClass.availableSeats,
+       },
+     };
+
+     const result = await classesCollection.updateOne(
+       filter,
+       InstructorClass,
+       options
+     );
+     res.send(result);
+   });
+
 
     app.get("/popular", async (req, res) => {
       const classes = await classesCollection
